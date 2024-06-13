@@ -479,7 +479,7 @@ class TextPanel(QWidget):
                     dialog_content = f"{speaker}:{original_text}"
                 else:
                     # 若无讲述人
-                    dialog_content = f"{original_text}"
+                    dialog_content = f"未知:{original_text}"
                 # 添加到页面内容中
                 page_content += dialog_content + "\n"
             # 添加到剪贴板
