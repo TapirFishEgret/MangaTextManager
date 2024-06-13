@@ -33,17 +33,19 @@ class TextPanel(QWidget):
         # 顶部控制栏
         self.up_control_layout = QHBoxLayout()  # 横向布局
         self.page_label = QLabel("页数")  # 图片名称标签
-        self.create_button = QPushButton("添加新页面")  # 添加新页面按钮
+        self.create_page_button = QPushButton("添加新页面")  # 添加新页面按钮
+        self.delete_page_button = QPushButton("删除最后一页")
         self.delete_button = QPushButton("删除文本组")  # 删除文本组按钮
         self.add_button = QPushButton("添加文本组")  # 添加文本组按钮
         self.copy_original_text_button = QPushButton("复制页面原文")  # 复制原文文本按钮
         self.copy_translated_text_button = QPushButton("复制页面译文")  # 复制译文按钮
-        self.up_control_layout.addWidget(self.page_label, 20)
-        self.up_control_layout.addWidget(self.copy_original_text_button, 16)
-        self.up_control_layout.addWidget(self.copy_translated_text_button, 16)
-        self.up_control_layout.addWidget(self.create_button, 16)
-        self.up_control_layout.addWidget(self.delete_button, 16)
-        self.up_control_layout.addWidget(self.add_button, 16)
+        self.up_control_layout.addWidget(self.page_label)
+        self.up_control_layout.addWidget(self.copy_original_text_button)
+        self.up_control_layout.addWidget(self.copy_translated_text_button)
+        self.up_control_layout.addWidget(self.delete_page_button)
+        self.up_control_layout.addWidget(self.create_page_button)
+        self.up_control_layout.addWidget(self.delete_button)
+        self.up_control_layout.addWidget(self.add_button)
         # 添加布局
         self.layout.addLayout(self.up_control_layout)
 
@@ -92,6 +94,7 @@ class TextPanel(QWidget):
         self.current_page_number = -1  # 当前页面
         self.image_panel = None  # 隔壁的图片面板
         self.is_human_editing = True  # 是否处在人工修改阶段
+        self.font_size = 10  # 字体大小
 
         # 设置边框样式
         self.table_panel.setStyleSheet(
@@ -102,7 +105,8 @@ class TextPanel(QWidget):
         self.copy_original_text_button.clicked.connect(self.copy_page_original_text)
         self.copy_translated_text_button.clicked.connect(self.copy_page_translated_text)
         self.jump_button.clicked.connect(self.jump_page)
-        self.create_button.clicked.connect(self.create_new_page)
+        self.delete_page_button.clicked.connect(self.delete_last_page)
+        self.create_page_button.clicked.connect(self.create_new_page)
         self.add_button.clicked.connect(self.add_text_group)
         self.delete_button.clicked.connect(self.delete_text_group)
         self.prev_button.clicked.connect(self.show_prev_page)
@@ -375,6 +379,11 @@ class TextPanel(QWidget):
             # 若不是，直接返回
             return
 
+        # 判断当前页面是否还有文本组
+        if len(self.current_data[self.current_page_number]) == 0:
+            # 如果文本组为空，则直接返回
+            return
+
         # 删除最后一行数据
         del self.current_data[self.current_page_number][-1]
         # 重载当前页面
@@ -395,6 +404,24 @@ class TextPanel(QWidget):
         self.current_data[number] = dialogs
         # 更新总页数
         self.page_max_number.setText(str(len(self.current_data)))
+        # 保存
+        self.save_text_file()
+
+    # 删除最后一个页面
+    def delete_last_page(self):
+        # 判断是否为mtm文件
+        if not self.text_is_mtm:
+            # 若不是，直接返回
+            return
+
+        # 获取最后一页序号
+        number = len(self.current_data)
+        # 删除最后一页的数据
+        self.current_data.popitem()
+        # 更新总页数
+        self.page_max_number.setText(str(len(self.current_data)))
+        # 保存
+        self.save_text_file()
 
     # 跳转
     def jump_page(self):
@@ -512,6 +539,30 @@ class TextPanel(QWidget):
         else:
             # 如果不是，则直接获取所有内容
             pyperclip.copy(self.text_panel.toPlainText())
+
+    # 增大字体大小
+    def increase_font_size(self):
+        self.font_size += 1
+        self.update_font_size()
+
+    # 减少字体大小
+    def decrease_font_size(self):
+        # 字体最小为1
+        if self.font_size > 1:
+            self.font_size -= 1
+            self.update_font_size()
+
+    # 更新表格界面字体大小
+    def update_font_size(self):
+        # 获取字体
+        font = self.table_panel.font()
+        # 设置字体大小
+        font.setPointSize(self.font_size)
+        # 设置字体
+        self.table_panel.setFont(font)
+        self.text_panel.setFont(font)
+        # 重设行高
+        self.table_panel.resizeRowsToContents()
 
     # 切换文本框
     def switch_text_panel(self):

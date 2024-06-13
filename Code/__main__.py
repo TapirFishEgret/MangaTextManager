@@ -65,6 +65,18 @@ class MangaTextManager(QMainWindow):
         self.output_text_action = QAction("导出文本", self)
         self.output_text_action.triggered.connect(self.text_panel.output_text_file)
         self.menuBar().addAction(self.output_text_action)
+        # 菜单项，增大字号
+        self.increase_font_size_action = QAction("增大字号", self)
+        self.increase_font_size_action.triggered.connect(
+            self.text_panel.increase_font_size
+        )
+        self.menuBar().addAction(self.increase_font_size_action)
+        # 菜单项，减小字号
+        self.decrease_font_size_action = QAction("减小字号", self)
+        self.decrease_font_size_action.triggered.connect(
+            self.text_panel.decrease_font_size
+        )
+        self.menuBar().addAction(self.decrease_font_size_action)
         # 菜单项，更换字体
         self.font_combo_box = QFontComboBox(self)
         self.font_combo_box.currentFontChanged.connect(self.change_font)
@@ -74,6 +86,8 @@ class MangaTextManager(QMainWindow):
     def change_font(self, font):
         # 使用全局样式表来更改整个应用程序的字体
         QApplication.instance().setFont(font)
+        # 顺便更新一下文本面板字体
+        self.text_panel.update_font_size()
 
 
 if __name__ == "__main__":
