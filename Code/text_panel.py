@@ -503,8 +503,8 @@ class TextPanel(QWidget):
                     # 有讲述人，则添加讲述人到内容中
                     dialog_content = f"{speaker}:{translated_text}"
                 else:
-                    # 若无讲述人
-                    dialog_content = f"{translated_text}"
+                    # 若无讲述人，则设置为“未知”
+                    dialog_content = f"未知:{translated_text}"
                 # 添加到页面内容中
                 page_content += dialog_content + "\n"
             # 添加到剪贴板
