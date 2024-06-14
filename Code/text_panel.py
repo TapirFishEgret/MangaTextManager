@@ -32,20 +32,20 @@ class TextPanel(QWidget):
 
         # 顶部控制栏
         self.up_control_layout = QHBoxLayout()  # 横向布局
-        self.page_label = QLabel("页数")  # 图片名称标签
+        self.paste_translated_text_button = QPushButton("粘贴页面译文")
         self.create_page_button = QPushButton("添加新页面")  # 添加新页面按钮
         self.delete_page_button = QPushButton("删除最后一页")
         self.delete_button = QPushButton("删除文本组")  # 删除文本组按钮
         self.add_button = QPushButton("添加文本组")  # 添加文本组按钮
         self.copy_original_text_button = QPushButton("复制页面原文")  # 复制原文文本按钮
         self.copy_translated_text_button = QPushButton("复制页面译文")  # 复制译文按钮
-        self.up_control_layout.addWidget(self.page_label, 10)
-        self.up_control_layout.addWidget(self.copy_original_text_button, 15)
-        self.up_control_layout.addWidget(self.copy_translated_text_button, 15)
-        self.up_control_layout.addWidget(self.delete_page_button, 15)
-        self.up_control_layout.addWidget(self.create_page_button, 15)
-        self.up_control_layout.addWidget(self.delete_button, 15)
-        self.up_control_layout.addWidget(self.add_button, 15)
+        self.up_control_layout.addWidget(self.paste_translated_text_button)
+        self.up_control_layout.addWidget(self.copy_original_text_button)
+        self.up_control_layout.addWidget(self.copy_translated_text_button)
+        self.up_control_layout.addWidget(self.delete_page_button)
+        self.up_control_layout.addWidget(self.create_page_button)
+        self.up_control_layout.addWidget(self.delete_button)
+        self.up_control_layout.addWidget(self.add_button)
         # 添加布局
         self.layout.addLayout(self.up_control_layout)
 
@@ -97,6 +97,12 @@ class TextPanel(QWidget):
         self.image_panel = None  # 隔壁的图片面板
         self.is_human_editing = True  # 是否处在人工修改阶段
         self.font_size = 10  # 字体大小
+        self.default_speaker = "未知"  # 预设内容
+        self.default_original_text = "原文"
+        self.deafult_translated_text = "译文"
+
+        # 关联
+        self.parser.text_panel = self
 
         # 设置边框样式
         self.table_panel.setStyleSheet(
@@ -104,6 +110,7 @@ class TextPanel(QWidget):
         )
 
         # 绑定方法
+        self.paste_translated_text_button.clicked.connect(self.paste_translated_text)
         self.copy_original_text_button.clicked.connect(self.copy_page_original_text)
         self.copy_translated_text_button.clicked.connect(self.copy_page_translated_text)
         self.jump_button.clicked.connect(self.jump_page)
@@ -317,6 +324,14 @@ class TextPanel(QWidget):
                 # 每条文本组插入一条新行
                 self.table_panel.insertRow(self.table_panel.rowCount())
 
+                # 判断是否为预设
+                if speaker == self.default_speaker:
+                    speaker = ""
+                if original_text == self.default_original_text:
+                    original_text = ""
+                if translated_text == self.deafult_translated_text:
+                    translated_text = ""
+
                 # 插入讲述人单元格
                 speaker_item = QTableWidgetItem(speaker)
                 speaker_item.setFlags(speaker_item.flags() | Qt.ItemIsEditable)
@@ -347,7 +362,6 @@ class TextPanel(QWidget):
             # 加载结束后，更改当前页面序号
             self.current_page_number = page_number
             # 设置页数
-            self.page_label.setText(f"Page {self.current_page_number:03}")
             self.jump_page_number.setText(str(self.current_page_number))
         else:
             # 若当前页面不存在，则报出提示
@@ -558,9 +572,13 @@ class TextPanel(QWidget):
                             for dialog in dialogs:
                                 speaker = dialog[0]
                                 if not speaker:
-                                    speaker = "未知"
+                                    speaker = self.default_speaker
                                 original_text = dialog[1]
+                                if not original_text:
+                                    original_text = self.default_original_text
                                 translated_text = dialog[2]
+                                if not translated_text:
+                                    translated_text = self.deafult_translated_text
                                 writer.writerow(
                                     [
                                         page_number,
@@ -628,6 +646,43 @@ class TextPanel(QWidget):
         else:
             # 如果不是，则直接获取所有内容
             pyperclip.copy(self.text_panel.toPlainText())
+
+    # 粘贴页面译文
+    def paste_translated_text(self):
+        # 读取剪切板内容
+        clipboard_content = pyperclip.paste()
+
+        # 检测是否为MTM
+        if not self.text_is_mtm:
+            # 如果不是，直接粘贴并返回
+            self.text_panel.append(clipboard_content)
+            return
+
+        # 去头去尾后按行区分
+        original_lines = clipboard_content.strip().split("\n")
+        lines = []
+        # 对行进行处理以删去空行
+        for line in original_lines:
+            if line.strip():
+                lines.append(line)
+        # 处理每一行并给予到当前页面的数据部分
+        for i in range(len(lines)):
+            line = lines[i]
+            content = ""
+            # 判断是否包含讲述人
+            if ":" in line:
+                # 若包含，则取出内容
+                content = line.split(":", 1)[1].strip()
+            else:
+                # 若不包含，则直接使用整行内容
+                content = line.strip()
+            # 获取内容后，获取当前对话
+            if i < len(self.current_data[self.current_page_number]):
+                dialog = self.current_data[self.current_page_number][i]
+                new_dialog = (dialog[0], dialog[1], content)
+                self.current_data[self.current_page_number][i] = new_dialog
+        # 结束更新数据后重载页面
+        self.load_page(self.current_page_number)
 
     # 增大字体大小
     def increase_font_size(self):

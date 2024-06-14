@@ -7,6 +7,9 @@ import re
 # 文本组标记，用于标记每句文本内容的标记：<DialogXXX Speaker = "">内容物</DialogXXX Speaker = "">
 class MarkupParser:
     def __init__(self):
+        # 文本面板
+        self.text_panel = None
+
         # 正则表达式，查找所有文档标记
         # 捕获为内容物
         self.document_pattern = re.compile(
@@ -99,5 +102,12 @@ class MarkupParser:
 
     # 生成对话组
     def generate_dialog(self, speaker, original_text, translated_text):
+        # 检查文本是否为空
+        if not speaker:
+            speaker = self.text_panel.default_speaker
+        if not original_text:
+            original_text = self.text_panel.default_original_text
+        if not translated_text:
+            translated_text = self.text_panel.deafult_translated_text
         # 返回格式化后的对话组文本
         return f'\t\t<Dialog Speaker="{speaker}">\n\t\t\t{original_text}\t\t\t\n\t\t\t{translated_text}\t\t\t\n\t\t</Dialog>'
