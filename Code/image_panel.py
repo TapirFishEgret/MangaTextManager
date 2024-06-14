@@ -57,13 +57,13 @@ class ImagePanel(QWidget):
         self.image_max_number = QLabel("总页数")
         self.jump_button = QPushButton("跳转")
         # 设置控制栏布局
-        self.down_control_layout.addWidget(self.jump_image_number)
+        self.down_control_layout.addWidget(self.jump_image_number, 5)
         self.down_control_layout.addWidget(
-            self.image_max_number, alignment=Qt.AlignCenter
+            self.image_max_number, 5, alignment=Qt.AlignCenter
         )
-        self.down_control_layout.addWidget(self.jump_button)
-        self.down_control_layout.addWidget(self.prev_button)
-        self.down_control_layout.addWidget(self.next_button)
+        self.down_control_layout.addWidget(self.jump_button, 10)
+        self.down_control_layout.addWidget(self.prev_button, 40)
+        self.down_control_layout.addWidget(self.next_button, 40)
         # 添加布局
         self.layout.addLayout(self.down_control_layout)
 

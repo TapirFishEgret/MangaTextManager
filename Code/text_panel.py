@@ -39,13 +39,13 @@ class TextPanel(QWidget):
         self.add_button = QPushButton("添加文本组")  # 添加文本组按钮
         self.copy_original_text_button = QPushButton("复制页面原文")  # 复制原文文本按钮
         self.copy_translated_text_button = QPushButton("复制页面译文")  # 复制译文按钮
-        self.up_control_layout.addWidget(self.page_label)
-        self.up_control_layout.addWidget(self.copy_original_text_button)
-        self.up_control_layout.addWidget(self.copy_translated_text_button)
-        self.up_control_layout.addWidget(self.delete_page_button)
-        self.up_control_layout.addWidget(self.create_page_button)
-        self.up_control_layout.addWidget(self.delete_button)
-        self.up_control_layout.addWidget(self.add_button)
+        self.up_control_layout.addWidget(self.page_label, 10)
+        self.up_control_layout.addWidget(self.copy_original_text_button, 15)
+        self.up_control_layout.addWidget(self.copy_translated_text_button, 15)
+        self.up_control_layout.addWidget(self.delete_page_button, 15)
+        self.up_control_layout.addWidget(self.create_page_button, 15)
+        self.up_control_layout.addWidget(self.delete_button, 15)
+        self.up_control_layout.addWidget(self.add_button, 15)
         # 添加布局
         self.layout.addLayout(self.up_control_layout)
 
@@ -78,11 +78,13 @@ class TextPanel(QWidget):
         self.jump_button = QPushButton("跳转")
         self.prev_button = QPushButton("上一页文本")  # 上一页文本
         self.next_button = QPushButton("下一页文本")  # 下一页文本
-        self.down_control_layout.addWidget(self.jump_page_number)
-        self.down_control_layout.addWidget(self.page_max_number)
-        self.down_control_layout.addWidget(self.jump_button)
-        self.down_control_layout.addWidget(self.prev_button)
-        self.down_control_layout.addWidget(self.next_button)
+        self.down_control_layout.addWidget(self.jump_page_number, 5)
+        self.down_control_layout.addWidget(
+            self.page_max_number, 5, alignment=Qt.AlignCenter
+        )
+        self.down_control_layout.addWidget(self.jump_button, 10)
+        self.down_control_layout.addWidget(self.prev_button, 40)
+        self.down_control_layout.addWidget(self.next_button, 40)
         self.layout.addLayout(self.down_control_layout)
 
         # 其他数据成员
