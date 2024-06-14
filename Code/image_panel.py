@@ -87,6 +87,14 @@ class ImagePanel(QWidget):
         self.next_button.clicked.connect(self.show_next_image)  # 绑定信号与信号槽
 
     # 其他函数
+    # 重设自身
+    def reset_self(self):
+        self.image = None  # 图片文件
+        self.scale_factor = 1.0  # 缩放比例
+        self.image_path_list = []  # 图片文件路径列表
+        self.current_image_index = -1  # 当前图片索引
+        self.image_label.clear()
+
     # 获取默认文件位置
     def get_default_path(self):
         # 判断文本面板是否有选中
@@ -121,7 +129,40 @@ class ImagePanel(QWidget):
         folder_path = QFileDialog.getExistingDirectory(
             self, "选择图片文件夹", default_path
         )
-        self.open_image_folder_with_path(folder_path)
+        # 判断是否选中路径
+        if folder_path:
+            # 判断是否有图集
+            if self.judge_images_exist(folder_path):
+                # 若有图集，则清空信息
+                self.reset_self()
+                # 打开图集
+                self.open_image_folder_with_path(folder_path)
+                # 判断路径下是否有文档文件
+                self.judge_path_has_doc_or_not(folder_path)
+                return
+            else:
+                # 若没有图集，报信息
+                self.menu_box.show_message("提示", "路径下没有图片文件")
+                return
+
+    # 判断是否存在图集
+    def judge_images_exist(self, folder_path):
+        # 判断是否有路径
+        if folder_path:
+            # 获取目标文件夹下所有图片文件
+            image_paths = [
+                os.path.normpath(os.path.join(folder_path, f))
+                for f in os.listdir(folder_path)
+                if f.lower().endswith((".png", ".jpg", ".jpeg", ".bmp", ".gif"))
+            ]
+            # 检测是否成功获取图片文件路径列表
+            if image_paths:
+                # 若成功获取，返回真
+                return True
+            else:
+                # 若没有图片文件，返回假
+                return False
+        return
 
     # 打开图集，但是需要提供路径
     def open_image_folder_with_path(self, folder_path):
@@ -146,38 +187,33 @@ class ImagePanel(QWidget):
                 key=lambda f: extract_numbers(os.path.basename(f))
             )
 
-            # 检测是否成功获取图片文件路径列表
-            if self.image_path_list:
-                # 若成功获取，设置各项参数
-                self.image_max_number.setText(str(len(self.image_path_list)))
-                self.show_image(0)
+            # 设置各项参数
+            self.image_max_number.setText(str(len(self.image_path_list)))
+            self.show_image(0)
 
-                # 并检测目录下是否存在mtm后缀的文件
-                text_file_path_list = [
-                    os.path.normpath(os.path.join(folder_path, f))
-                    for f in os.listdir(folder_path)
-                    if f.lower().endswith(".mtm")
-                ]
-                # 判断数量
-                if len(text_file_path_list) == 1:
-                    # 若存在且只存在一个，则读取
-                    text_file_path = text_file_path_list[0]
-                    if os.path.exists(text_file_path):
-                        self.text_panel.open_text_file_with_path(text_file_path)
-                        return
-                elif len(text_file_path_list) == 0:
-                    # 若不存在，弹出信息，随后读取
-                    self.menu_box.show_message("提示", "当前目录下无文档文件，请创建")
-                    self.text_panel.new_text_file()
-                    return
-                else:
-                    # 若存在多个文档，输出信息
-                    self.menu_box.show_message(
-                        "提示", "路径下存在多个文档文件，请保留其一"
-                    )
-            else:
-                # 若没有图片文件，输出一条信息
-                self.menu_box.show_message("提示", "路径下没有图片文件")
+    # 判断是否需要创建文档文件
+    def judge_path_has_doc_or_not(self, folder_path):
+        # 并检测目录下是否存在mtm后缀的文件
+        text_file_path_list = [
+            os.path.normpath(os.path.join(folder_path, f))
+            for f in os.listdir(folder_path)
+            if f.lower().endswith(".mtm")
+        ]
+        # 判断数量
+        if len(text_file_path_list) == 1:
+            # 若存在且只存在一个，则读取
+            text_file_path = text_file_path_list[0]
+            if os.path.exists(text_file_path):
+                self.text_panel.open_text_file_with_path(text_file_path)
+                return
+        elif len(text_file_path_list) == 0:
+            # 若不存在，弹出信息，随后读取
+            self.menu_box.show_message("提示", "当前目录下无文档文件，请创建")
+            self.text_panel.new_text_file()
+            return
+        else:
+            # 若存在多个文档，输出信息
+            self.menu_box.show_message("提示", "路径下存在多个文档文件，请保留其一")
 
     # 加载图片
     def load_image(self, file_path):

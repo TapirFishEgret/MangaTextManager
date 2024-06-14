@@ -118,6 +118,15 @@ class TextPanel(QWidget):
         # 默认切换
         self.switch_text_panel()
 
+    # 重设自身
+    def reset_self(self):
+        # 重设前保存
+        self.save_text_file()
+        self.current_text_path = None  # 当前文档地址
+        self.text_is_mtm = False  # 当前文档是否为mtm文档
+        self.current_data = {}  # 当前数据
+        self.current_page_number = -1  # 当前页面
+
     # 获取默认文件位置
     def get_default_path(self):
         # 判断图片面板是否有文件目录列表
@@ -133,6 +142,7 @@ class TextPanel(QWidget):
 
     # 新建文本文件
     def new_text_file(self):
+        # 获取文件路径
         default_path = self.get_default_path()
         file_path, _ = QFileDialog.getSaveFileName(
             self,
@@ -140,36 +150,66 @@ class TextPanel(QWidget):
             default_path,
             "MTM Files (*.mtm);;Text Files (*.txt);;All Files(*)",
         )
-        self.new_text_file_with_path(file_path)
-
-    # 新建文本文件，传入路径版本
-    def new_text_file_with_path(self, file_path):
-        # 判断路径是否存在
+        # 判断是否选中文件
         if file_path:
-            # 若存在，判断路径下是否存在图片文件
+            # 如果有，获取路径文件，并创建页面内容列表与内容字符串
             folder_path = os.path.normpath(os.path.dirname(file_path))
-            image_files = [
-                os.path.normpath(f)
-                for f in os.listdir(folder_path)
-                if f.lower().endswith((".png", ".jpg", ".jpeg", ".bmp", ".gif"))
-            ]
-            if image_files:
-                # 若存在，生成标记文档内容
-                pages = [(i + 1, [("", "", "")]) for i in range(len(image_files))]
+            pages = []
+            content = ""
+            # 开始文件判断
+            if self.judge_file_type(file_path):
+                # 如果是MTM文件
+                # 判断是否有图集
+                if self.image_panel.judge_images_exist(folder_path):
+                    # 如果有图集
+                    # 打开图集
+                    self.image_panel.open_image_folder_with_path(folder_path)
+
+                    # 生成是否回答方法
+                    def if_yes():
+                        # 如果根据图片创建文档
+                        pages.extend(
+                            [
+                                (i + 1, [("", "", "")])
+                                for i in range(len(self.image_panel.image_path_list))
+                            ]
+                        )
+
+                    def if_no():
+                        # 如果不，创建单页文档
+                        pages.extend([(1, [("", "", "")])])
+
+                    # 询问是否要按照图集生成
+                    self.menu_box.show_confirmation_dialog(
+                        "询问",
+                        "当前目录下存在图片文件，是否根据图片文件创建文档？",
+                        if_yes,
+                        if_no,
+                    )
+                else:
+                    # 如果没有图集，则提示并生成单页数据
+                    self.menu_box.show_message(
+                        "提示", "当前文件夹下无图片数据，将生成单页MTM文档"
+                    )
+                    pages.extend[(1, [("", "", "")])]
+                # 判定结束后生成内容
                 content = self.parser.generate_document(pages)
-                # 写入内容
-                with open(file_path, "w", encoding="utf-8") as file:
-                    file.write(content)
-                # 打开图集
-                self.image_panel.open_image_folder_with_path(folder_path)
-                # 打开文档
-                self.open_text_file_with_path(file_path)
+            # 内容生成结束后，写入文件
+            with open(file_path, "w", encoding="utf-8") as file:
+                file.write(content)
+            # 打开文件
+            self.open_text_file_with_path(file_path)
+
+    # 判断文档类型
+    def judge_file_type(self, file_path):
+        if file_path:
+            # 对文档类型进行判断
+            if file_path.lower().endswith(".mtm"):
+                # 如果是MTM文档，返回True
+                return True
             else:
-                # 若无图片文件，生成普通文档
-                with open(file_path, "w", encoding="utf-8") as file:
-                    file.write("")
-                # 打开文档
-                self.open_text_file_with_path(file_path)
+                # 如果不是，返回False
+                return False
 
     # 打开文本文件
     def open_text_file(self):
@@ -182,20 +222,55 @@ class TextPanel(QWidget):
             default_path,
             "MTM Files (*.mtm);;Text Files (*.txt);;All Files(*)",
         )
-        self.open_text_file_with_path(file_path)
+        # 判断有无选中
+        if file_path:
+            # 若有选中，打开文本文件，并进行后续操作
+            self.open_text_file_with_path(file_path)
+            # 获取路径
+            folder_path = os.path.normpath(os.path.dirname(file_path))
+            if self.image_panel.judge_images_exist(folder_path):
+                # 如果有，创建是否函数，询问是否加载
+                # 是
+                def if_yes():
+                    # 加载图集
+                    self.image_panel.open_image_folder_with_path(folder_path)
+                    # 若加载，简单判断页面数据与图片数据是否相符
+                    if len(self.current_data) == len(self.image_panel.image_path_list):
+                        # 若相符，则正常
+                        return
+                    else:
+                        # 若不相同，则需要报信息
+                        self.menu_box.show_message(
+                            "提示",
+                            "文档中页面数量与文件夹内图片数量不符，请注意不要开启了错误的文件",
+                        )
+
+                # 否
+                def if_no():
+                    # 不加载图集，并删除现有图集
+                    self.image_panel.reset_self()
+                    return
+
+                # 询问是否要加载图集
+                self.menu_box.show_confirmation_dialog(
+                    "询问",
+                    "是否加载图片文件？",
+                    if_yes,
+                    if_no,
+                )
 
     # 打开文本文件，传入了路径的版本
     def open_text_file_with_path(self, file_path):
+        # 打开前重设自身
+        self.reset_self()
         # 检查是否有文件被选中
         if file_path:
             # 若有，加载
             with open(file_path, "r", encoding="utf-8") as file:
                 text = file.read()
-                self.current_text_path = file_path
                 self.load_text_data(text)
-        else:
-            # 若无，弹出提示
-            self.menu_box.show_message("提示", "未选中文档文件")
+            # 设定软件内数据
+            self.current_text_path = file_path
 
     # 加载文本数据
     def load_text_data(self, text):
@@ -414,10 +489,10 @@ class TextPanel(QWidget):
             # 若不是，直接返回
             return
 
-        # 获取最后一页序号
-        number = len(self.current_data)
-        # 删除最后一页的数据
-        self.current_data.popitem()
+        # 判断当前页数
+        if len(self.current_data) > 1:
+            # 删除最后一页的数据
+            self.current_data.popitem()
         # 更新总页数
         self.page_max_number.setText(str(len(self.current_data)))
         # 保存

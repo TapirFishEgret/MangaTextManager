@@ -31,15 +31,15 @@ class MangaTextManager(QMainWindow):
         self.image_panel.text_panel = self.text_panel  # 互相关联一下
 
         # 分割框的设置
-        splitter = QSplitter(Qt.Horizontal)
-        splitter.addWidget(self.text_panel)
-        splitter.addWidget(self.image_panel)
-        splitter.setSizes([self.width() // 2, self.width() // 2])
+        self.splitter = QSplitter(Qt.Horizontal)
+        self.splitter.addWidget(self.text_panel)
+        self.splitter.addWidget(self.image_panel)
+        self.splitter.setSizes([self.width() // 2, self.width() // 2])
 
         # 内容物的设置
         container = QWidget()
         layout = QVBoxLayout()
-        layout.addWidget(splitter)
+        layout.addWidget(self.splitter)
         container.setLayout(layout)
         self.setCentralWidget(container)
 
@@ -65,6 +65,10 @@ class MangaTextManager(QMainWindow):
         self.output_text_action = QAction("导出文本", self)
         self.output_text_action.triggered.connect(self.text_panel.output_text_file)
         self.menuBar().addAction(self.output_text_action)
+        # 菜单项，开关图片显示
+        self.toggle_image_panel_action = QAction("开关图片显示", self)
+        self.toggle_image_panel_action.triggered.connect(self.toggle_image_panel)
+        self.menuBar().addAction(self.toggle_image_panel_action)
         # 菜单项，增大字号
         self.increase_font_size_action = QAction("增大字号", self)
         self.increase_font_size_action.triggered.connect(
@@ -88,6 +92,20 @@ class MangaTextManager(QMainWindow):
         QApplication.instance().setFont(font)
         # 顺便更新一下文本面板字体
         self.text_panel.update_font_size()
+
+    # 开关图片面板显示方法
+    def toggle_image_panel(self):
+        # 检测当前显示与否
+        if self.image_panel.isVisible():
+            # 若显示，则关闭
+            self.image_panel.hide()
+            # 调整分割框
+            self.splitter.setSizes([self.width(), 0])
+        else:
+            # 若不显示，则开启
+            self.image_panel.show()
+            # 调整分割框
+            self.splitter.setSizes([self.width() // 2, self.width() // 2])
 
 
 if __name__ == "__main__":
