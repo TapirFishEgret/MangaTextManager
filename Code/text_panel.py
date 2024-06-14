@@ -554,7 +554,19 @@ class TextPanel(QWidget):
                         # 内容
                         for page_number, dialogs in pages:
                             for dialog in dialogs:
-                                writer.writerow([page_number, *dialog])
+                                speaker = dialog[0]
+                                if not speaker:
+                                    speaker = "未知"
+                                original_text = dialog[1]
+                                translated_text = dialog[2]
+                                writer.writerow(
+                                    [
+                                        page_number,
+                                        speaker,
+                                        original_text,
+                                        translated_text,
+                                    ]
+                                )
                     else:
                         # 若不是，调用解析器生成内容
                         content = self.parser.generate_document(pages)
