@@ -672,7 +672,10 @@ class TextPanel(QWidget):
             # 判断是否包含讲述人
             if ":" in line:
                 # 若包含，则取出内容
-                content = line.split(":", 1)[1].strip()
+                content = line.split(":", 1)[-1].strip()
+            elif "：" in line:
+                # 若包含，则取出内容
+                content = line.split("：", 1)[-1].strip()
             else:
                 # 若不包含，则直接使用整行内容
                 content = line.strip()
